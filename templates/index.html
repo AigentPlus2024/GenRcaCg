@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Alert System</title>
+    <link href='https://fonts.googleapis.com/css?family=Inter' rel='stylesheet'>
+      <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet'>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<!--    <link rel="stylesheet" href="/static/css/styles.css">-->
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+</head>
+<body>
+<div id="chat-bubble" onclick="openChat()"><img src="static/images/sgx logo.png" alt="sgx log" height="30px" width="30px" style="margin-bottom: -5px;"></div>
+    <div id="chat-container">
+        <div id="chat-header"><img src="static/images/sgx logo.png" alt="sgx log" height="30px" width="30px"><span id="header-text">Genix Support</span>
+        <span id="maximize-icon" onclick="maximizeChat()">🔳</span><span onclick="closeChat()">—</span>
+        </div>
+        <div id="chat-box"></div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Type a message...">
+            <span class="attach-icon"><i class="fa fa-paperclip" style="font-size:24px"></i></span>
+            <span id="send-icon"><img src="static/images/send-message.png" alt="send icon" height="20px" width="20px"></span>
+        </div>
+    </div>
+<script src="{{ url_for('static', path='/js/script.js') }}"></script>
+</body>
+</html>
