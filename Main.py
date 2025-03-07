@@ -46,33 +46,19 @@ async def get_home(request: Request):
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    logging.info("🟡 WebSocket request received!")  # Log incoming request
+    logging.info("WebSocket request received!")  # Log incoming request
     await websocket.accept()
     active_connections.add(websocket)
-    logging.info("✅ WebSocket client connected.")
+    logging.info("WebSocket client connected.")
 
     try:
         while True:
             data = await websocket.receive_text()
-            logging.info(f"📩 Received: {data}")
-            await websocket.send_text(f"📝 Message received: {data}")
+            logging.info(f"Received: {data}")
+            await websocket.send_text(f" Message received: {data}")
     except WebSocketDisconnect:
         active_connections.remove(websocket)
-        logging.info("❌ WebSocket client disconnected.")
-# @app.websocket("/ws")
-# async def websocket_endpoint(websocket: WebSocket):
-#     """Handle WebSocket connections."""
-#     await websocket.accept()
-#     active_connections.add(websocket)
-#     logging.info("🔌 WebSocket client connected.")
-#
-#     try:
-#         while True:
-#             await websocket.receive_text()  # Keep connection open
-#     except WebSocketDisconnect:
-#         active_connections.remove(websocket)
-#         logging.info("❌ WebSocket client disconnected.")
-
+        logging.info(" WebSocket client disconnected.")
 
 @app.get("/test-db-connection")
 def test_database_connection():
@@ -116,50 +102,20 @@ def test_database_connection():
         # Raise HTTP exception with error details
         raise HTTPException(status_code=500, detail=str(e))
 
-# async def check_for_new_data():
-#     last_id = 0  # Track the last processed row ID
-#     while True:
-#         logging.info("Checking for new data...")  # Log execution
-#         try:
-#             async with SessionLocal() as session:
-#                 result = await session.execute(text("SELECT id FROM error_response ORDER BY id DESC LIMIT 1"))
-#                 latest_row = result.scalar()
-#
-#                 if latest_row > last_id:
-#                     logging.info(f"Latest row ID fetched: {latest_row}")
-#                     # ✅ Fetch complete data by ID
-#                     row_data = await fetch_data_by_id(session, latest_row)
-#
-#                     # ✅ Send row data to WebSocket clients
-#                     logging.info(row_data)
-#                     await notify_clients(row_data)
-#
-#                 else:
-#                     logging.info("No rows found in database.")
-#
-#                 if latest_row and latest_row > last_id:
-#                     last_id = latest_row
-#                     logging.info(f"New row detected: ID {latest_row}")
-#
-#         except Exception as e:
-#             logging.error(f"Error checking database: {e}")
-#
-#         await asyncio.sleep(3)
-
 
 async def check_for_new_data():
     """Continuously checks for new rows and sends them to the WebSocket."""
 
-    # ✅ Step 1: Get the last row's ID at startup
+    # Step 1: Get the last row's ID at startup
     async with SessionLocal() as session:
         result = await session.execute(text("SELECT id FROM error_response ORDER BY id DESC LIMIT 1"))
         last_row = result.scalar()
         last_id = last_row if last_row else 0  # Use last row ID, or 0 if table is empty
 
-    logging.info(f"🔄 Starting from last known row ID: {last_id}")
+    logging.info(f"Starting from last known row ID: {last_id}")
 
     while True:
-        logging.info("🔄 Checking for new data...")  # Log execution
+        logging.info("Checking for new data...")  # Log execution
         try:
             async with SessionLocal() as session:
                 # Fetch all rows with ID greater than last_id
@@ -168,7 +124,7 @@ async def check_for_new_data():
                 new_rows = result.scalars().all()  # Get all new row IDs
 
                 if new_rows:
-                    logging.info(f"🆕 New rows detected: {new_rows}")
+                    logging.info(f"New rows detected: {new_rows}")
 
                     for row_id in new_rows:
                         row_data = await fetch_data_by_id(session, row_id)
@@ -183,13 +139,13 @@ async def check_for_new_data():
                     logging.info("No new rows found.")
 
         except Exception as e:
-            logging.error(f"❌ Error checking database: {e}")
+            logging.error(f"Error checking database: {e}")
 
         await asyncio.sleep(10)  # Check every 10 seconds
 
 
 async def fetch_data_by_id(session, row_id):
-    """🔍 Fetch complete row data based on ID."""
+    """Fetch complete row data based on ID."""
     try:
         query = text("SELECT * FROM error_response WHERE id = :id")
         result = await session.execute(query, {"id": row_id})
@@ -198,50 +154,28 @@ async def fetch_data_by_id(session, row_id):
         if row:
             column_names = result.keys()
             row_dict = dict(zip(column_names, row))
-            # ✅ Convert datetime objects to strings
+            # Convert datetime objects to strings
             for key, value in row_dict.items():
                 if isinstance(value, datetime):
                     row_dict[key] = value.isoformat()  # Convert datetime to "YYYY-MM-DDTHH:MM:SS"
             return row_dict
         return None
     except Exception as e:
-        logging.error(f"❌ Error fetching data by ID: {e}")
+        logging.error(f"Error fetching data by ID: {e}")
         return None
 
 async def notify_clients(data):
-    """📡 Send data to all connected WebSocket clients."""
+    """Send data to all connected WebSocket clients."""
     if data:
         message = json.dumps(data)
-        logging.info(f"📨 Sending update to {len(active_connections)} clients: {message}")
+        logging.info(f"Sending update to {len(active_connections)} clients: {message}")
         for connection in active_connections:
             try:
                 await connection.send_text(message)
-                logging.info("✅ Data sent to UI via WebSocket.")
+                logging.info("Data sent to UI via WebSocket.")
             except Exception as e:
-                logging.error(f"❌ Error sending WebSocket message: {e}")
+                logging.error(f"Error sending WebSocket message: {e}")
 
-# # Keep track of the last processed row ID
-# last_id = 0
-#
-# async def check_for_new_data():
-#     global last_id
-#     async with SessionLocal() as session:
-#         while True:
-#             try:
-#                 # Fetch the latest row where id > last_id
-#                 result = await session.execute(text(f"SELECT * FROM error_response WHERE id > {last_id} ORDER BY id ASC"))
-#                 new_rows = result.fetchall()
-#
-#                 if new_rows:
-#                     for row in new_rows:
-#                         last_id = row[0]  # Assuming 'id' is the first column
-#                         await notify_clients(f"New row inserted: {dict(row)}")
-#                         logging.info(f"New row detected: {dict(row)}")
-#
-#                 await asyncio.sleep(3)  # Poll every 3 seconds
-#
-#             except Exception as e:
-#                 logging.error(f"Error checking database: {e}")
 
 # Stream AI-like text response
 async def generate_html_stream(content: str):
