@@ -38,6 +38,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 active_connections = set()  # Store active WebSocket connections
+search_connections = set()
 
 @app.get("/")
 async def get_home(request: Request):
@@ -59,6 +60,57 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         active_connections.remove(websocket)
         logging.info(" WebSocket client disconnected.")
+
+# Websocket connection two
+@app.websocket("/ws/search")
+async def websocket_search(websocket: WebSocket):
+    await websocket.accept()
+    search_connections.add(websocket)
+    logging.info("🔌 WebSocket (Search) connected.")
+
+    try:
+        while True:
+            keyword = await websocket.receive_text()  # 🔹 Receive search query
+            logging.info(f"🔍 Searching for keyword: {keyword}")
+
+            # 🔹 Fetch data matching the keyword
+            matching_data = await search_errors(keyword)
+
+            # 🔹 Send results to UI via WebSocket
+            response = json.dumps(matching_data)
+            await websocket.send_text(response)
+            logging.info("✅ Search results sent to UI.")
+
+    except WebSocketDisconnect:
+        search_connections.remove(websocket)
+        logging.info("❌ WebSocket (Search) disconnected.")
+
+# fetching rows with data based on user input keywords
+async def search_errors(keyword: str):
+    """🔍 Fetch rows where `error_msg` contains the keyword."""
+    try:
+        async with SessionLocal() as session:
+            query = text("SELECT * FROM error_response WHERE source LIKE :keyword")
+            result = await session.execute(query, {"keyword": f"%{keyword}%"})
+            rows = result.fetchall()
+
+            if not rows:
+                return {"status": "success", "message": "No matching records found.", "results": []}
+
+            # ✅ Convert result into dictionary format
+            column_names = result.keys()
+            formatted_rows = [
+                {key: (value.isoformat() if isinstance(value, datetime) else value)
+                 for key, value in zip(column_names, row)}
+                for row in rows
+            ]
+
+            return {"status": "success", "results": formatted_rows}
+
+    except Exception as e:
+        logging.error(f"Error fetching data: {e}")
+        return {"status": "error", "message": str(e)}
+
 
 @app.get("/test-db-connection")
 def test_database_connection():
