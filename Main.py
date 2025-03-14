@@ -1,9 +1,13 @@
 from datetime import datetime
 import json
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, WebSocket, HTTPException
+
+import httpx
+from fastapi import FastAPI, WebSocket, HTTPException, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import StreamingResponse
+from httpx import Response
+from pydantic import BaseModel
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -40,6 +44,18 @@ templates = Jinja2Templates(directory="templates")
 active_connections = set()  # Store active WebSocket connections
 search_connections = set()
 
+# Pydantic model for request validation
+class ErrorCreate(BaseModel):
+    source: str
+    error_description: str
+    response: str
+
+# Dependency to get DB session
+async def get_db():
+    async with SessionLocal() as session:
+        yield session
+
+
 @app.get("/")
 async def get_home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -66,28 +82,28 @@ async def websocket_endpoint(websocket: WebSocket):
 async def websocket_search(websocket: WebSocket):
     await websocket.accept()
     search_connections.add(websocket)
-    logging.info("🔌 WebSocket (Search) connected.")
+    logging.info(" WebSocket (Search) connected.")
 
     try:
         while True:
-            keyword = await websocket.receive_text()  # 🔹 Receive search query
-            logging.info(f"🔍 Searching for keyword: {keyword}")
+            keyword = await websocket.receive_text()  #  Receive search query
+            logging.info(f"Searching for keyword: {keyword}")
 
-            # 🔹 Fetch data matching the keyword
+            # Fetch data matching the keyword
             matching_data = await search_errors(keyword)
 
-            # 🔹 Send results to UI via WebSocket
+            # Send results to UI via WebSocket
             response = json.dumps(matching_data)
             await websocket.send_text(response)
-            logging.info("✅ Search results sent to UI.")
+            logging.info("Search results sent to UI.")
 
     except WebSocketDisconnect:
         search_connections.remove(websocket)
-        logging.info("❌ WebSocket (Search) disconnected.")
+        logging.info("WebSocket (Search) disconnected.")
 
 # fetching rows with data based on user input keywords
 async def search_errors(keyword: str):
-    """🔍 Fetch rows where `error_msg` contains the keyword."""
+    """Fetch rows where `error_msg` contains the keyword."""
     try:
         async with SessionLocal() as session:
             query = text("SELECT * FROM error_response WHERE source LIKE :keyword")
@@ -97,7 +113,7 @@ async def search_errors(keyword: str):
             if not rows:
                 return {"status": "success", "message": "No matching records found.", "results": []}
 
-            # ✅ Convert result into dictionary format
+            # Convert result into dictionary format
             column_names = result.keys()
             formatted_rows = [
                 {key: (value.isoformat() if isinstance(value, datetime) else value)
@@ -240,3 +256,26 @@ async def generate_html_stream(content: str):
 async def stream_html(message: str):
     """Endpoint that streams the provided message"""
     return StreamingResponse(generate_html_stream(message), media_type="text/html")
+
+
+@app.post("/insert-error/")
+async def insert_error(error_data: ErrorCreate, db: AsyncSession = Depends(get_db)):
+    """Insert an error log into the error_response table."""
+    try:
+        query = text("""
+            INSERT INTO error_response (source, error_description, response)
+            VALUES (:source, :error_description, :response)
+        """)
+        await db.execute(query, {
+            "source": error_data.source,
+            "error_description": error_data.error_description,
+            "response": error_data.response
+        })
+
+        await db.commit()
+        return {"message": "Error inserted successfully"}
+
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
