@@ -22,9 +22,14 @@
         <div id="chat-box"></div>
         <div id="chat-input-container">
             <input type="text" id="chat-input" placeholder="Type a message...">
-            <span class="attach-icon"><i class="fa fa-paperclip" style="font-size:24px"></i></span>
-            <span id="send-icon" onclick="searchByKeyword()"><img src="static/images/send-message.png" alt="send icon" height="20px" width="20px"></span>
+            <span class="attach-icon">
+                <i class="fa fa-paperclip" style="font-size:24px"></i>
+            </span>
+            <span id="send-icon">
+                <img src="static/images/send-message.png" alt="send icon" height="20px" width="20px">
+            </span>
         </div>
+
     </div>
 <script src="{{ url_for('static', path='/js/script.js') }}"></script>
 </body>

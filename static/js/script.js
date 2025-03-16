@@ -163,22 +163,51 @@ function stopTypingIndicator(container) {
 }
 
 
-//Function to send user input (keyword) to WebSocket
-function searchByKeyword() {
-    const keywordInput = document.getElementById("chat-input").value.trim();
+document.addEventListener("DOMContentLoaded", function () {
+    const inputBox = document.getElementById("chat-input");
+    const sendButton = document.getElementById("send-icon"); // Send button is now a span
 
-    if (keywordInput === "") {
-        alert("Please enter a search term.");
-        return;
-    }
+    // Function to send user input to WebSocket
+    function searchByKeyword() {
+        const keywordInput = inputBox.value.trim();
 
-    if (searchSocket.readyState === WebSocket.OPEN) {
+        if (keywordInput === "") {
+            alert("Please enter a search term.");
+            return;
+        }
+
+        // Assuming WebSocket is open, send the message (you need to ensure WebSocket is properly initialized)
         console.log("Searching for:", keywordInput);
-        searchSocket.send(keywordInput); // Send search keyword to backend
-    } else {
-        console.error("Search WebSocket not connected.");
+        // If WebSocket is ready, send it to the backend
+        if (searchSocket && searchSocket.readyState === WebSocket.OPEN) {
+            searchSocket.send(keywordInput); // Send the search term to backend
+        } else {
+            console.error("WebSocket not connected.");
+        }
+
+        inputBox.value = ""; // Clear input after sending
     }
-}
+
+    // Event listener for button click (send button)
+    sendButton.addEventListener("click", function() {
+        console.log("Button clicked!"); // Debug log
+        searchByKeyword();
+    });
+
+    // Event listener for Enter key
+    inputBox.addEventListener("keydown", function(event) {
+        console.log("Key pressed:", event.key); // Debug log
+        if (event.key === "Enter") {
+            event.preventDefault(); // Prevent form submission
+            searchByKeyword(); // Trigger search on Enter key
+        }
+    });
+
+    // Ensure input box is focused to test event
+    inputBox.focus();
+});
+
+
 
 // Receive and display search results
 searchSocket.onmessage = function (event) {
