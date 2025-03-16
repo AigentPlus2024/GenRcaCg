@@ -16,7 +16,7 @@ from starlette.requests import Request
 import asyncio
 from starlette.staticfiles import StaticFiles
 import logging
-
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocketDisconnect
 
 # Enable logging to check execution
@@ -43,6 +43,15 @@ templates = Jinja2Templates(directory="templates")
 
 active_connections = set()  # Store active WebSocket connections
 search_connections = set()
+
+# Add CORSMiddleware to the app
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Can be ["*"] for all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all HTTP methods (POST, GET, OPTIONS, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
 
 # Pydantic model for request validation
 class ErrorCreate(BaseModel):
@@ -261,6 +270,7 @@ async def stream_html(message: str):
 @app.post("/insert-error/")
 async def insert_error(error_data: ErrorCreate, db: AsyncSession = Depends(get_db)):
     """Insert an error log into the error_response table."""
+    logging.info("comming here: ****************")
     try:
         query = text("""
             INSERT INTO error_response (source, error_description, response)
