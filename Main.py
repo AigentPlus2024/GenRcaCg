@@ -115,7 +115,7 @@ async def search_errors(keyword: str):
     """Fetch rows where `error_msg` contains the keyword."""
     try:
         async with SessionLocal() as session:
-            query = text("SELECT * FROM error_response WHERE source LIKE :keyword")
+            query = text("SELECT * FROM error_response WHERE search_keyword LIKE :keyword order by id desc limit 1")
             result = await session.execute(query, {"keyword": f"%{keyword}%"})
             rows = result.fetchall()
 
@@ -270,16 +270,16 @@ async def stream_html(message: str):
 @app.post("/insert-error/")
 async def insert_error(error_data: ErrorCreate, db: AsyncSession = Depends(get_db)):
     """Insert an error log into the error_response table."""
-    logging.info("comming here: ****************")
     try:
         query = text("""
-            INSERT INTO error_response (source, error_description, response)
-            VALUES (:source, :error_description, :response)
+            INSERT INTO error_response (source, error_description, response, search_keyword)
+            VALUES (:source, :error_description, :response, :search_keyword)
         """)
         await db.execute(query, {
             "source": error_data.source,
             "error_description": error_data.error_description,
-            "response": error_data.response
+            "response": error_data.response,
+            "search_keyword": error_data.search_keyword
         })
 
         await db.commit()

@@ -42,14 +42,23 @@ socket.onmessage = (event) => {
     openChat(); // Ensure this function is working
     const errorBox = document.createElement('span');
           errorBox.className = "inner-errorBox";
+    // Determine the button text based on the source value
+    let buttonText = "";
+    if (data.source.includes("Health")) {
+        buttonText = "<button id='health-btn'>Healthy</button>";
+    } else if (data.source.includes("Incident")) {
+        buttonText = "<button id='alert-btn'>Alert</button>";
+    }
+
     // Display error alert
     const alertMessage = `
         <div class='chat-message' style="background-color: white;">
     <span class='timestamp'>${new Date().toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
     <span class='inner-logo'><img src="/static/images/sgx logo.png" alt="sgx log" height="10px" width="10px"></span><span id="inner-logo-text">Genix Support</span><br><br>
-    Source: ${data.source}<br>
+    <b>${data.source}</b>
+    ${buttonText}<br><br>
     <div class='error-box'>
-        Error: '${data.error_description}'
+        ${data.error_description}
     </div>
 </div>`;
 
@@ -67,15 +76,77 @@ socket.onclose = () => {
 };
 
 
-
-
-
-
-function startAnalysis(responseSteps) {
+//function startAnalysis(responseSteps) {
+//    const responseBox = document.createElement("div");
+//    responseBox.className = "response-box";
+//    responseBox.innerHTML = `<span class='timestamp'>${new Date().toLocaleString()}</span>`;
+//    responseBox.innerHTML = `<span class='inner-logo'><img src="static/images/sgx logo.png" alt="sgx log" height="10px" width="10px"></span><span id="inner-logo-text">Genix Support</span><br><br>`;
+//
+//    const feedbackicons = document.createElement("div");
+//    feedbackicons.className = "chat-icons";
+//    feedbackicons.innerHTML = `<span class="icon"><i class="fa fa-thumbs-o-up" style="color:gray"></i></span>
+//    <span class="icon"><i class="fa fa-thumbs-o-down" style="color:gray"></i></span>`;
+//    chatBox.appendChild(responseBox);
+//    startTypingIndicator(responseBox);
+//
+//
+//    function streamText(content) {
+//        let index = 0;
+//
+//        // Use DOMParser to safely extract elements and text
+//        const parser = new DOMParser();
+//        const doc = parser.parseFromString(content, 'text/html');
+//        // Extract images separately
+//        const images = doc.querySelectorAll("img"); // Get all images
+//
+//        // Remove images from original node list
+//        images.forEach(img => img.remove());
+//        // Convert NodeList to an array and flatten all child elements and text nodes
+//        const nodes = Array.from(doc.body.childNodes);
+//
+//        // Function to append HTML progressively
+//        const interval = setInterval(() => {
+//            if (index < nodes.length) {
+//                const node = nodes[index];
+//
+//                // Append elements or text while preserving structure
+//                if (node.nodeType === Node.ELEMENT_NODE) {
+//                    responseBox.appendChild(node.cloneNode(true));  // Clone to retain original
+//                } else if (node.nodeType === Node.TEXT_NODE) {
+//                    responseBox.innerHTML += node.textContent;  // Append raw text
+//                }
+//
+//
+//                index++;
+//                chatBox.scrollTop = chatBox.scrollHeight;  // Ensure auto-scroll
+//            } else {
+//                // Append timestamp when done
+//                responseBox.innerHTML += `<span class='timestamp'>
+//                    ${new Date().toLocaleString('en-US', {
+//                        month: '2-digit', day: '2-digit', year: 'numeric',
+//                        hour: '2-digit', minute: '2-digit', hour12: true
+//                    })}
+//                </span>`;
+//
+//                // Stop typing indicator & cleanup
+//                stopTypingIndicator(responseBox);
+//                chatBox.scrollTop = chatBox.scrollHeight;  // Final scroll
+//                // Append images separately after streaming completes
+//                appendImages(images);
+//                clearInterval(interval);  // Stop the interval
+//
+//            }
+//        }, 100); // Adjust speed for smooth typing effect
+//    }
+//
+//    streamText(responseSteps);
+//
+//    }
+async function startAnalysis(responseSteps) {
     const responseBox = document.createElement("div");
     responseBox.className = "response-box";
     responseBox.innerHTML = `<span class='timestamp'>${new Date().toLocaleString()}</span>`;
-    responseBox.innerHTML = `<span class='inner-logo'><img src="static/images/sgx logo.png" alt="sgx log" height="10px" width="10px"></span><span id="inner-logo-text">Genix Support</span><br><br>`;
+    responseBox.innerHTML = `<span class='inner-logo'><img src="static/images/sgx logo.png" alt="sgx logo" height="10px" width="10px"></span><span id="inner-logo-text">Genix Support</span><br><br>`;
 
     const feedbackicons = document.createElement("div");
     feedbackicons.className = "chat-icons";
@@ -84,53 +155,89 @@ function startAnalysis(responseSteps) {
     chatBox.appendChild(responseBox);
     startTypingIndicator(responseBox);
 
-
-    function streamText(content) {
-        let index = 0;
-
-        // Use DOMParser to safely extract elements and text
+    async function streamText(content) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(content, 'text/html');
 
-        // Convert NodeList to an array and flatten all child elements and text nodes
+        // Extract images separately
+        const images = doc.querySelectorAll("img"); // Get all images
+        // Remove images from the document so they won't be added directly to the responseBox
+        images.forEach(img => img.remove());
+
+        // Convert NodeList to an array of child nodes and text
         const nodes = Array.from(doc.body.childNodes);
 
-        // Function to append HTML progressively
-        const interval = setInterval(() => {
-            if (index < nodes.length) {
-                const node = nodes[index];
-
-                // Append elements or text while preserving structure
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                    responseBox.appendChild(node.cloneNode(true));  // Clone to retain original
-                } else if (node.nodeType === Node.TEXT_NODE) {
-                    responseBox.innerHTML += node.textContent;  // Append raw text
-                }
-
-                index++;
-                chatBox.scrollTop = chatBox.scrollHeight;  // Ensure auto-scroll
-            } else {
-                // Append timestamp when done
-                responseBox.innerHTML += `<span class='timestamp'>
-                    ${new Date().toLocaleString('en-US', {
-                        month: '2-digit', day: '2-digit', year: 'numeric',
-                        hour: '2-digit', minute: '2-digit', hour12: true
-                    })}
-                </span>`;
-
-                // Stop typing indicator & cleanup
-                stopTypingIndicator(responseBox);
-                chatBox.scrollTop = chatBox.scrollHeight;  // Final scroll
-                clearInterval(interval);  // Stop the interval
+        // Streaming the text progressively
+        for (const node of nodes) {
+            // Append elements or text while preserving structure
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                responseBox.appendChild(node.cloneNode(true));  // Clone to retain original elements
+            } else if (node.nodeType === Node.TEXT_NODE) {
+                responseBox.innerHTML += node.textContent;  // Append raw text
             }
-        }, 100); // Adjust speed for smooth typing effect
+
+            chatBox.scrollTop = chatBox.scrollHeight;  // Ensure auto-scroll
+
+            // Add a small delay for smooth text typing effect
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        // Append timestamp when done
+        responseBox.innerHTML += `<span class='timestamp'>
+            ${new Date().toLocaleString('en-US', {
+                month: '2-digit', day: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', hour12: true
+            })}
+        </span>`;
+
+        // Stop typing indicator & cleanup
+        stopTypingIndicator(responseBox);
+        chatBox.scrollTop = chatBox.scrollHeight;  // Final scroll
+
+        // Now append images after text streaming is done
+        await appendImages(images);
     }
 
-    streamText(responseSteps);
+    // Function to append images to chatBox after text has finished streaming
+    function appendImages(images) {
+        return new Promise((resolve) => {
+            if (images.length > 0) {
+                images.forEach(img => {
+                    const wrapper = document.createElement("div"); // Create a wrapper div
+                    wrapper.style.textAlign = "center"; // Center the image
+                    wrapper.style.marginBottom = "10px"; // Add spacing between images
 
+                    img.style.maxWidth = "100%"; // Ensure responsiveness
+
+                    // Clone and append image inside wrapper
+                    wrapper.appendChild(img.cloneNode(true)); // Clone to avoid modifying the original
+                    chatBox.appendChild(wrapper); // Append to chatBox
+                });
+            }
+            resolve(); // Resolve the promise after images are appended
+        });
     }
 
+    // Start streaming the text and images
+    await streamText(responseSteps);
+}
 
+
+//function appendImages(images) {
+//    if (images.length > 0) {
+//        images.forEach(img => {
+//            const wrapper = document.createElement("div"); // Create a wrapper div
+//            wrapper.style.textAlign = "center"; // Center the image
+//            wrapper.style.marginBottom = "10px"; // Add spacing between images
+//
+//            img.style.maxWidth = "100%"; // Ensure responsiveness
+////            img.style.borderRadius = "8px"; // Optional: Rounded corners for aesthetics
+//
+//            wrapper.appendChild(img.cloneNode(true)); // Clone & append image inside wrapper
+//            chatBox.appendChild(wrapper); // Append to chatBox
+//        });
+//    }
+//}
 
 
 
@@ -228,16 +335,23 @@ searchSocket.onmessage = function (event) {
                     .then(() => {
                         const errorBox = document.createElement('span');
                         errorBox.className = "inner-errorBox";
-
+                        // Determine the button text based on the source value
+                            let buttonText = "";
+                            if (row.source.includes("Health")) {
+                                buttonText = "<button id='health-btn'>Healthy</button>";
+                            } else if (row.source.includes("Incident")) {
+                                buttonText = "<button id='alert-btn'>Alert</button>";
+                            }
                         // Display error alert
                         const alertMessage = `
                             <div class='chat-message' style="background-color: white;">
                                 <span class='timestamp'>${new Date().toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                                 <span class='inner-logo'><img src="/static/images/sgx logo.png" alt="sgx log" height="10px" width="10px"></span>
                                 <span id="inner-logo-text">Genix Support</span><br><br>
-                                Source: ${row.source}<br>
+                                <b>${row.source}</b>
+                                ${buttonText}<br><br>
                                 <div class='error-box'>
-                                    Error: '${row.error_description}'
+                                    ${row.error_description}
                                 </div>
                             </div>`;
 

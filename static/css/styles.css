@@ -5,6 +5,7 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
+    font-size: 14px;
 }
 
 #chat-bubble {
@@ -37,7 +38,7 @@ body {
     top: 14px;
 }
 .inner-logo img{
-    margin-bottom: 5.5px;
+    margin-bottom: 3.8px;
     margin-left: 1.5px;
 }
 #inner-logo-text{
@@ -55,7 +56,9 @@ body {
     right: 20px;
     width: 450px;
     height: 600px;
+    /*background: #F5F5F5;*/
     background: #F5F5F5;
+
     border-radius: 10px;
     box-shadow: 0 4px 6px 4px rgba(0, 0, 0, 0.1);
     display: none;
@@ -99,7 +102,7 @@ margin-right: 30px;}
 
 }
 .highlight-box {
-    background: #E5FFFA;
+    background: #FFF1F1;
     padding: 10px;
     display: flex;
     align-items: stretch;
@@ -132,6 +135,7 @@ margin-right: 30px;}
     border-radius: 10px;
     margin-top: 10px;
     position: relative;
+    color: #0556CF;
 }
 #header-text{
     position: absolute;
@@ -188,6 +192,9 @@ margin-right: 30px;}
     width: 370px;
     font-size: 14px;
 }
+#source{
+font-weight: bold;
+}
 
 .attach-icon {
     /* margin-left: 10px; */
@@ -219,6 +226,140 @@ margin-right: 30px;}
     height: 20px;
     cursor: pointer;
 }
+
+/*Css for Health report */
+
+.highlight-box-health {
+    background: #E5FFFA;
+    padding: 10px;
+    display: flex;
+    align-items: stretch;
+    border-radius: 5px;
+    margin-top: 5px;
+    /* border-left: 3px solid #628bf4; */
+    margin-bottom: 35px;
+    }
+
+
+#health-btn{
+    position: absolute;
+    padding: 5px;
+    right: 16px;
+    background: #D7F6CE;
+    color: #08970B;
+    border-radius: 8px;
+    border: none;
+    margin-top: -5px;
+    font-size: 12px;
+    width: 79px;
+    height: 28px;
+
+}
+table {
+
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 12px;
+    border: 2px solid #A1A1A1;
+    width: 380px;
+
+}
+th {
+    padding: 5px;
+    text-align: left;
+
+}
+th {
+    background-color: #FFFFFF;
+    color: gray;
+}
+td {
+padding: 5px;
+}
+tr{
+border: 2px solid #A1A1A1;
+}
+.cpu {
+    background-color: #f8d7da;
+    font-weight: bold;
+    color: #a94442;
+
+}
+.disk {
+    background-color: #fff3cd;
+    font-weight: bold;
+    color: #856404;
+
+}
+.network {
+    background-color: #d4edda;
+    font-weight: bold;
+    color: #155724;
+
+}
+.memory {
+    background-color: #d4edda;
+    font-weight: bold;
+    color: #155724;
+}
+
+
+/*Css for Incident Report  htcare homehealth */
+.highlight-box-white {
+    background: #E5FFFA;
+    padding: 10px;
+    display: flex;
+    align-items: stretch;
+    border-radius: 5px;
+    margin-top: 5px;
+    margin-bottom: 35px;
+}
+
+
+
+#alert-btn{
+    position: absolute;
+    padding: 5px;
+    right: 16px;
+    background: #FFF1F1;
+    color: #B01010;
+    border-radius: 8px;
+    border: none;
+    margin-top: -8px;
+    width: 81px;
+    height: 28px;
+    font-size: 12px;
+}
+
+/*Css for Splunk Queries - Frequent -5 */
+.container-queries {
+            width: 100%;
+            color: #494B50;
+            font-size: 12px;
+
+        }
+  .log-box {
+    border: 1px solid #A1A1A1;
+    margin-bottom: 20px;
+    /* padding: 10px; */
+
+  }
+  .log-header {
+    background-color: #E2E1EC;
+    padding: 8px;
+    font-weight: bold;
+    border: 1px solid #A1A1A1;
+    /* border-radius: 5px 5px 0 0; */
+  }
+  .log-content {
+    padding: 10px;
+    background-color: #FFFFFF;
+    border: 1px solid #A1A1A1;
+  }
+
+
+
+
 
 .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
 .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
