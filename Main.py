@@ -33,7 +33,7 @@ SYSTEM_PROMPT = (
     "modifications or changes. Do not analyze, format, or alter the content in any way. Simply return the given "
     "input exactly as it is."
 )
-OPENAI_API_KEY = "sk-proj-9abmI8C1T473I3jChi8CT3BlbkFJBdOBl6aBsnzgITzjFZpG"
+OPENAI_API_KEY = ""
 openai.api_key = OPENAI_API_KEY
 # Background task to check for new rows
 # Use FastAPI's new lifespan event
