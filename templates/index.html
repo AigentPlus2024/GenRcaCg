@@ -9,6 +9,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <!--    <link rel="stylesheet" href="/static/css/styles.css">-->
     <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
 </head>
@@ -18,6 +19,7 @@
     <div id="chat-container">
         <div id="chat-header"><img src="static/images/sgx logo.png" alt="sgx log" height="30px" width="30px"><span id="header-text">Genix Support</span>
         <span id="maximize-icon" onclick="maximizeChat()">🔳</span><span onclick="closeChat()">—</span>
+        <span id="refresh-icon" onclick="refreshChat()"><i class='fas fa-sync' id="refresh-icon-inner" style='font-size:15px'></i></span>
         </div>
         <div id="chat-box"></div>
         <div id="chat-input-container">
@@ -29,7 +31,6 @@
                 <img src="static/images/send-message.png" alt="send icon" height="20px" width="20px">
             </span>
         </div>
-
     </div>
 <script src="{{ url_for('static', path='/js/script.js') }}"></script>
 </body>

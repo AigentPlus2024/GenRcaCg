@@ -74,6 +74,28 @@ body {
 #maximize-icon{
 margin-right: 30px;}
 
+#refresh-icon{
+margin-right: 60px;
+transition: transform 0.3s ease-in-out, color 0.3s;
+}
+/* Hover Effect: Change Color and Rotate Slightly */
+#refresh-icon-inner:hover {
+    color: #28a745; /* Green color on hover */
+    transform: rotate(45deg);
+}
+
+/* Click (Active) Effect: Smooth Spin Animation */
+#refresh-icon-inner:active {
+    animation: spin 0.6s linear;
+}
+
+/* Keyframes for Smooth Rotation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
 #chat-header {
     background: black; color: white; padding: 20px;
     font-size: 16px; text-align: center;
@@ -102,13 +124,14 @@ margin-right: 30px;}
 
 }
 .highlight-box {
-    background: #FFF1F1;
-    padding: 10px;
+    background: #E5FFFA;
+    padding: 15px;
     display: flex;
     align-items: stretch;
     border-radius: 5px;
     margin-top: 5px;
-    margin-bottom: 35px;
+    margin-bottom: 15px;
+    line-height: 1.4;
 }
 
 #vertical_line{
@@ -135,8 +158,18 @@ margin-right: 30px;}
     border-radius: 10px;
     margin-top: 10px;
     position: relative;
-    color: #0556CF;
+    color: #1B1C1F;
 }
+.error-box-keywords {
+    background: #F5F5F5;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 10px;
+    position: relative;
+    color: #0556CF;
+    font-weight: 500;
+}
+
 #header-text{
     position: absolute;
     left: -210px;
@@ -231,7 +264,7 @@ font-weight: bold;
 
 .highlight-box-health {
     background: #E5FFFA;
-    padding: 10px;
+    padding: 15px;
     display: flex;
     align-items: stretch;
     border-radius: 5px;
@@ -239,6 +272,16 @@ font-weight: bold;
     /* border-left: 3px solid #628bf4; */
     margin-bottom: 35px;
     }
+.highlight-box-health-main{
+    background: #F2F2F2;
+    padding: 15px;
+    display: flex;
+    align-items: stretch;
+    border-radius: 5px;
+    margin-top: 5px;
+    /* border-left: 3px solid #628bf4; */
+    margin-bottom: 35px;
+}
 
 
 #health-btn{
@@ -307,7 +350,7 @@ border: 2px solid #A1A1A1;
 /*Css for Incident Report  htcare homehealth */
 .highlight-box-white {
     background: #E5FFFA;
-    padding: 10px;
+    padding: 15px;
     display: flex;
     align-items: stretch;
     border-radius: 5px;
@@ -329,6 +372,7 @@ border: 2px solid #A1A1A1;
     width: 81px;
     height: 28px;
     font-size: 12px;
+    font-weight: 600;
 }
 
 /*Css for Splunk Queries - Frequent -5 */
@@ -339,7 +383,7 @@ border: 2px solid #A1A1A1;
 
         }
   .log-box {
-    border: 1px solid #A1A1A1;
+    border: 0.7px solid #A1A1A1;
     margin-bottom: 20px;
     /* padding: 10px; */
 
@@ -348,13 +392,13 @@ border: 2px solid #A1A1A1;
     background-color: #E2E1EC;
     padding: 8px;
     font-weight: bold;
-    border: 1px solid #A1A1A1;
+    border: 0.7px solid #A1A1A1;
     /* border-radius: 5px 5px 0 0; */
   }
   .log-content {
-    padding: 10px;
+    padding: 15px;
     background-color: #FFFFFF;
-    border: 1px solid #A1A1A1;
+    border: 0.7px solid #A1A1A1;
   }
 
 

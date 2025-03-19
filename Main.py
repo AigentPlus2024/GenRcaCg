@@ -3,6 +3,7 @@ import json
 from contextlib import asynccontextmanager
 
 import httpx
+import openai
 from fastapi import FastAPI, WebSocket, HTTPException, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import StreamingResponse
@@ -26,6 +27,14 @@ engine = create_async_engine(DATABASE_URL, echo = True)
 # SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 SessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
+# Predefined system prompt for returning exact HTML
+SYSTEM_PROMPT = (
+    "You will be provided with an HTML string. Your task is to return the exact same HTML string without any "
+    "modifications or changes. Do not analyze, format, or alter the content in any way. Simply return the given "
+    "input exactly as it is."
+)
+OPENAI_API_KEY = "sk-proj-9abmI8C1T473I3jChi8CT3BlbkFJBdOBl6aBsnzgITzjFZpG"
+openai.api_key = OPENAI_API_KEY
 # Background task to check for new rows
 # Use FastAPI's new lifespan event
 @asynccontextmanager
@@ -44,7 +53,7 @@ templates = Jinja2Templates(directory="templates")
 active_connections = set()  # Store active WebSocket connections
 search_connections = set()
 
-# Add CORSMiddleware to the app
+# Add CORSMiddleware to the apps
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Can be ["*"] for all origins
@@ -58,6 +67,7 @@ class ErrorCreate(BaseModel):
     source: str
     error_description: str
     response: str
+    search_keyword: str
 
 # Dependency to get DB session
 async def get_db():
@@ -266,11 +276,28 @@ async def stream_html(message: str):
     """Endpoint that streams the provided message"""
     return StreamingResponse(generate_html_stream(message), media_type="text/html")
 
+# Function to get the exact same HTML as response
+async def generate_html_response(logs: str) -> str:
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": logs}
+    ]
+
+    # Call OpenAI API
+    response = openai.ChatCompletion.create(
+        model="gpt-4-turbo",
+        messages=messages,
+        temperature=0.0,  # Ensure no creativity
+    )
+
+    # Return the exact HTML response
+    return response.choices[0].message["content"].strip()
 
 @app.post("/insert-error/")
 async def insert_error(error_data: ErrorCreate, db: AsyncSession = Depends(get_db)):
     """Insert an error log into the error_response table."""
     try:
+        llm_response = await generate_html_response(error_data.response)
         query = text("""
             INSERT INTO error_response (source, error_description, response, search_keyword)
             VALUES (:source, :error_description, :response, :search_keyword)
@@ -278,12 +305,12 @@ async def insert_error(error_data: ErrorCreate, db: AsyncSession = Depends(get_d
         await db.execute(query, {
             "source": error_data.source,
             "error_description": error_data.error_description,
-            "response": error_data.response,
+            "response": llm_response,
             "search_keyword": error_data.search_keyword
         })
 
         await db.commit()
-        return {"message": "Error inserted successfully"}
+        return {"message": "Error inserted successfully with llm response", "response": llm_response}
 
     except Exception as e:
         await db.rollback()

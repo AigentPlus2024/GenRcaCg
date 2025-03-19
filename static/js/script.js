@@ -34,41 +34,68 @@ socket.onopen = () => {
 };
 
 socket.onmessage = (event) => {
-
     try {
-    const data = JSON.parse(event.data);
-    console.log("📡 New data received:", data);
+        const data = JSON.parse(event.data);
+        console.log("New data received:", data);
 
-    openChat(); // Ensure this function is working
-    const errorBox = document.createElement('span');
-          errorBox.className = "inner-errorBox";
-    // Determine the button text based on the source value
-    let buttonText = "";
-    if (data.source.includes("Health")) {
-        buttonText = "<button id='health-btn'>Healthy</button>";
-    } else if (data.source.includes("Incident")) {
-        buttonText = "<button id='alert-btn'>Alert</button>";
+        openChat(); // Ensure this function is working
+        const errorBox = document.createElement('span');
+        errorBox.className = "inner-errorBox";
+
+        // Determine the button text based on the source value
+        let buttonText = "";
+        if (data.source.includes("Health")) {
+            buttonText = "<button id='health-btn'>Healthy</button><br><br>";
+        } else if (data.source.includes("Incident")) {
+            buttonText = "<button id='alert-btn'>Alert</button><br><br>";
+        }
+
+        let sourceStyle = null;
+        if (data.search_keyword === null || data.search_keyword.trim() === ""){
+            sourceStyle =`Source: ${data.source}`
+        }else{
+            sourceStyle =`<span style="font-weight: 649; color: #1B1C1F;">${data.source}</span>`
+        }
+
+        let errorBoxStyle = null;
+        if (data.search_keyword === null || data.search_keyword.trim() === ""){
+            errorBoxStyle = `<div class='error-box'>${data.error_description}</div>`
+        }else {
+            errorBoxStyle = `<div class='error-box-keywords'>${data.error_description}</div>`
+        }
+
+
+
+        // Display error alert
+        const alertMessage = `
+            <div class='chat-message' style="background-color: white;">
+                <span class='timestamp'>${new Date().toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                <span class='inner-logo'><img src="/static/images/sgx logo.png" alt="sgx log" height="10px" width="10px"></span>
+                <span id="inner-logo-text">Genix Support</span><br><br>
+                ${sourceStyle}
+                ${buttonText}
+                ${errorBoxStyle}
+                <div class='analysis-box' id="analysis-box-${data.id}"></div>
+            </div>`;
+
+        errorBox.innerHTML = alertMessage;
+        chatBox.appendChild(errorBox);
+
+        // ✅ Add the if-else condition here
+        setTimeout(() => {
+            const analysisBox = document.getElementById(`analysis-box-${data.id}`);
+            if (data.search_keyword === null || data.search_keyword.trim() === "") {
+                // If search_keyword is null or empty, call startAnalysisWithKeyword
+                startAnalysis(data.response);
+            } else {
+                // Otherwise, call startAnalysis normally
+                startAnalysisWithKeyword(data.response, analysisBox);
+            }
+        }, 1000);
+
+    } catch (error) {
+        console.error("Error processing WebSocket message:", error);
     }
-
-    // Display error alert
-    const alertMessage = `
-        <div class='chat-message' style="background-color: white;">
-    <span class='timestamp'>${new Date().toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
-    <span class='inner-logo'><img src="/static/images/sgx logo.png" alt="sgx log" height="10px" width="10px"></span><span id="inner-logo-text">Genix Support</span><br><br>
-    <b>${data.source}</b>
-    ${buttonText}<br><br>
-    <div class='error-box'>
-        ${data.error_description}
-    </div>
-</div>`;
-
-    errorBox.innerHTML = alertMessage;
-    chatBox.appendChild(errorBox);
-    setTimeout(() => startAnalysis(data.response), 1000);
-
-} catch (error) {
-    console.error("Error processing WebSocket message:", error);
-}
 };
 
 socket.onclose = () => {
@@ -76,77 +103,12 @@ socket.onclose = () => {
 };
 
 
-//function startAnalysis(responseSteps) {
-//    const responseBox = document.createElement("div");
-//    responseBox.className = "response-box";
-//    responseBox.innerHTML = `<span class='timestamp'>${new Date().toLocaleString()}</span>`;
-//    responseBox.innerHTML = `<span class='inner-logo'><img src="static/images/sgx logo.png" alt="sgx log" height="10px" width="10px"></span><span id="inner-logo-text">Genix Support</span><br><br>`;
-//
-//    const feedbackicons = document.createElement("div");
-//    feedbackicons.className = "chat-icons";
-//    feedbackicons.innerHTML = `<span class="icon"><i class="fa fa-thumbs-o-up" style="color:gray"></i></span>
-//    <span class="icon"><i class="fa fa-thumbs-o-down" style="color:gray"></i></span>`;
-//    chatBox.appendChild(responseBox);
-//    startTypingIndicator(responseBox);
-//
-//
-//    function streamText(content) {
-//        let index = 0;
-//
-//        // Use DOMParser to safely extract elements and text
-//        const parser = new DOMParser();
-//        const doc = parser.parseFromString(content, 'text/html');
-//        // Extract images separately
-//        const images = doc.querySelectorAll("img"); // Get all images
-//
-//        // Remove images from original node list
-//        images.forEach(img => img.remove());
-//        // Convert NodeList to an array and flatten all child elements and text nodes
-//        const nodes = Array.from(doc.body.childNodes);
-//
-//        // Function to append HTML progressively
-//        const interval = setInterval(() => {
-//            if (index < nodes.length) {
-//                const node = nodes[index];
-//
-//                // Append elements or text while preserving structure
-//                if (node.nodeType === Node.ELEMENT_NODE) {
-//                    responseBox.appendChild(node.cloneNode(true));  // Clone to retain original
-//                } else if (node.nodeType === Node.TEXT_NODE) {
-//                    responseBox.innerHTML += node.textContent;  // Append raw text
-//                }
-//
-//
-//                index++;
-//                chatBox.scrollTop = chatBox.scrollHeight;  // Ensure auto-scroll
-//            } else {
-//                // Append timestamp when done
-//                responseBox.innerHTML += `<span class='timestamp'>
-//                    ${new Date().toLocaleString('en-US', {
-//                        month: '2-digit', day: '2-digit', year: 'numeric',
-//                        hour: '2-digit', minute: '2-digit', hour12: true
-//                    })}
-//                </span>`;
-//
-//                // Stop typing indicator & cleanup
-//                stopTypingIndicator(responseBox);
-//                chatBox.scrollTop = chatBox.scrollHeight;  // Final scroll
-//                // Append images separately after streaming completes
-//                appendImages(images);
-//                clearInterval(interval);  // Stop the interval
-//
-//            }
-//        }, 100); // Adjust speed for smooth typing effect
-//    }
-//
-//    streamText(responseSteps);
-//
-//    }
-async function startAnalysis(responseSteps) {
+
+function startAnalysis(responseSteps) {
     const responseBox = document.createElement("div");
     responseBox.className = "response-box";
     responseBox.innerHTML = `<span class='timestamp'>${new Date().toLocaleString()}</span>`;
-    responseBox.innerHTML = `<span class='inner-logo'><img src="static/images/sgx logo.png" alt="sgx logo" height="10px" width="10px"></span><span id="inner-logo-text">Genix Support</span><br><br>`;
+    responseBox.innerHTML = `<span class='inner-logo'><img src="static/images/sgx logo.png" alt="sgx log" height="10px" width="10px"></span><span id="inner-logo-text">Genix Support</span><br><br>`;
 
     const feedbackicons = document.createElement("div");
     feedbackicons.className = "chat-icons";
@@ -154,6 +116,69 @@ async function startAnalysis(responseSteps) {
     <span class="icon"><i class="fa fa-thumbs-o-down" style="color:gray"></i></span>`;
     chatBox.appendChild(responseBox);
     startTypingIndicator(responseBox);
+
+
+
+    function streamText(content) {
+        let index = 0;
+
+        // Use DOMParser to safely extract elements and text
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(content, 'text/html');
+
+        // Convert NodeList to an array and flatten all child elements and text nodes
+        const nodes = Array.from(doc.body.childNodes);
+
+        // Function to append HTML progressively
+        const interval = setInterval(() => {
+            if (index < nodes.length) {
+                const node = nodes[index];
+
+                // Append elements or text while preserving structure
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    responseBox.appendChild(node.cloneNode(true));  // Clone to retain original
+                } else if (node.nodeType === Node.TEXT_NODE) {
+                    responseBox.innerHTML += node.textContent;  // Append raw text
+                }
+
+
+                index++;
+                chatBox.scrollTop = chatBox.scrollHeight;  // Ensure auto-scroll
+            } else {
+                // Append timestamp when done
+                responseBox.innerHTML += `<span class='timestamp'>
+                    ${new Date().toLocaleString('en-US', {
+                        month: '2-digit', day: '2-digit', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit', hour12: true
+                    })}
+                </span>`;
+
+                // Stop typing indicator & cleanup
+                stopTypingIndicator(responseBox);
+                chatBox.scrollTop = chatBox.scrollHeight;  // Final scroll
+                clearInterval(interval);  // Stop the interval
+
+            }
+        }, 100); // Adjust speed for smooth typing effect
+    }
+
+    streamText(responseSteps);
+
+    }
+
+
+async function startAnalysisWithKeyword(responseSteps, analysisBox) {
+//    const responseBox = document.createElement("div");
+//    responseBox.className = "response-box";
+//    responseBox.innerHTML = `<span class='timestamp'>${new Date().toLocaleString()}</span>`;
+//    responseBox.innerHTML = `<span class='inner-logo'><img src="static/images/sgx logo.png" alt="sgx logo" height="10px" width="10px"></span><span id="inner-logo-text">Genix Support</span><br><br>`;
+//
+//    const feedbackicons = document.createElement("div");
+//    feedbackicons.className = "chat-icons";
+//    feedbackicons.innerHTML = `<span class="icon"><i class="fa fa-thumbs-o-up" style="color:gray"></i></span>
+//    <span class="icon"><i class="fa fa-thumbs-o-down" style="color:gray"></i></span>`;
+//    chatBox.appendChild(responseBox);
+    startTypingIndicator(analysisBox);
 
     async function streamText(content) {
         const parser = new DOMParser();
@@ -171,9 +196,9 @@ async function startAnalysis(responseSteps) {
         for (const node of nodes) {
             // Append elements or text while preserving structure
             if (node.nodeType === Node.ELEMENT_NODE) {
-                responseBox.appendChild(node.cloneNode(true));  // Clone to retain original elements
+                analysisBox.appendChild(node.cloneNode(true));  // Clone to retain original elements
             } else if (node.nodeType === Node.TEXT_NODE) {
-                responseBox.innerHTML += node.textContent;  // Append raw text
+                analysisBox.innerHTML += node.textContent;  // Append raw text
             }
 
             chatBox.scrollTop = chatBox.scrollHeight;  // Ensure auto-scroll
@@ -183,15 +208,15 @@ async function startAnalysis(responseSteps) {
         }
 
         // Append timestamp when done
-        responseBox.innerHTML += `<span class='timestamp'>
-            ${new Date().toLocaleString('en-US', {
-                month: '2-digit', day: '2-digit', year: 'numeric',
-                hour: '2-digit', minute: '2-digit', hour12: true
-            })}
-        </span>`;
+//        responseBox.innerHTML += `<span class='timestamp'>
+//            ${new Date().toLocaleString('en-US', {
+//                month: '2-digit', day: '2-digit', year: 'numeric',
+//                hour: '2-digit', minute: '2-digit', hour12: true
+//            })}
+//        </span>`;
 
         // Stop typing indicator & cleanup
-        stopTypingIndicator(responseBox);
+        stopTypingIndicator(analysisBox);
         chatBox.scrollTop = chatBox.scrollHeight;  // Final scroll
 
         // Now append images after text streaming is done
@@ -223,22 +248,6 @@ async function startAnalysis(responseSteps) {
 }
 
 
-//function appendImages(images) {
-//    if (images.length > 0) {
-//        images.forEach(img => {
-//            const wrapper = document.createElement("div"); // Create a wrapper div
-//            wrapper.style.textAlign = "center"; // Center the image
-//            wrapper.style.marginBottom = "10px"; // Add spacing between images
-//
-//            img.style.maxWidth = "100%"; // Ensure responsiveness
-////            img.style.borderRadius = "8px"; // Optional: Rounded corners for aesthetics
-//
-//            wrapper.appendChild(img.cloneNode(true)); // Clone & append image inside wrapper
-//            chatBox.appendChild(wrapper); // Append to chatBox
-//        });
-//    }
-//}
-
 
 
 function startTypingIndicator(container) {
@@ -264,6 +273,33 @@ function maximizeChat() {
         maxAndMinIcons.innerHTML = '🔳';
     }
 }
+
+/// Ensure refreshChat is defined globally
+window.refreshChat = function () {
+    console.log("Refreshing Chat UI...");
+
+    // Show confirmation alert
+    const userConfirmation = confirm("Are you sure you want to clear the chat?");
+
+    // If user clicks "Yes"
+    if (userConfirmation) {
+        // Get chatBox reference correctly
+        const chatBox = document.getElementById("chat-box");
+        if (!chatBox) {
+            console.error("chatBox element not found!");
+            return;
+        }
+
+        // Clear all child nodes from chatBox
+        while (chatBox.firstChild) {
+            chatBox.removeChild(chatBox.firstChild);
+        }
+        console.log("Chat UI cleared successfully!");
+    } else {
+        console.log("Chat clear operation canceled.");
+    }
+};
+
 function stopTypingIndicator(container) {
     const typingIndicator = container.querySelector(".typing-indicator");
     if (typingIndicator) typingIndicator.remove();
@@ -335,13 +371,21 @@ searchSocket.onmessage = function (event) {
                     .then(() => {
                         const errorBox = document.createElement('span');
                         errorBox.className = "inner-errorBox";
+
                         // Determine the button text based on the source value
-                            let buttonText = "";
-                            if (row.source.includes("Health")) {
-                                buttonText = "<button id='health-btn'>Healthy</button>";
-                            } else if (row.source.includes("Incident")) {
-                                buttonText = "<button id='alert-btn'>Alert</button>";
-                            }
+                        let buttonText = "";
+                        if (row.source.includes("Health")) {
+                            buttonText = "<button id='health-btn'>Healthy</button>";
+                        } else if (row.source.includes("Incident")) {
+                            buttonText = "<button id='alert-btn'>Alert</button>";
+                        }
+                        let errorBoxStyle = null;
+                        if (row.search_keyword === null || row.search_keyword.trim() === ""){
+                            errorBoxStyle = `<div class='error-box'>${row.error_description}</div>`
+                        }else {
+                            errorBoxStyle = `<div class='error-box-keywords'>${row.error_description}</div>`
+                        }
+
                         // Display error alert
                         const alertMessage = `
                             <div class='chat-message' style="background-color: white;">
@@ -350,9 +394,8 @@ searchSocket.onmessage = function (event) {
                                 <span id="inner-logo-text">Genix Support</span><br><br>
                                 <b>${row.source}</b>
                                 ${buttonText}<br><br>
-                                <div class='error-box'>
-                                    ${row.error_description}
-                                </div>
+                                ${errorBoxStyle}
+                                <div class='analysis-box' id="analysis-box-${row.id}"></div> <!-- ✅ Placeholder for analysis -->
                             </div>`;
 
                         errorBox.innerHTML = alertMessage;
@@ -360,7 +403,17 @@ searchSocket.onmessage = function (event) {
 
                         return new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s
                     })
-                    .then(() => startAnalysis(row.response)); // Call startAnalysis sequentially
+                    .then(() => {
+                        const analysisBox = document.getElementById(`analysis-box-${row.id}`);
+
+                        if (row.search_keyword === null || row.search_keyword.trim() === "") {
+                            // ✅ Call startAnalysis as it is without any changes
+                            startAnalysis(row.response);
+                        } else {
+                            // ✅ Pass analysisBox to startAnalysisWithKeyword to update inside errorBox
+                            startAnalysisWithKeyword(row.response, analysisBox);
+                        }
+                    }); // ✅ Properly closing the .then()
             });
         } else {
             console.warn("No valid results found in response.");
@@ -370,5 +423,7 @@ searchSocket.onmessage = function (event) {
         console.error("Error processing search WebSocket message:", error);
     }
 };
+
+
 
 
