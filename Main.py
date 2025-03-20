@@ -2,12 +2,11 @@ from datetime import datetime
 import json
 from contextlib import asynccontextmanager
 
-import httpx
+
 import openai
 from fastapi import FastAPI, WebSocket, HTTPException, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import StreamingResponse
-from httpx import Response
 from pydantic import BaseModel
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
@@ -19,6 +18,7 @@ from starlette.staticfiles import StaticFiles
 import logging
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocketDisconnect
+from config import settings
 
 # Enable logging to check execution
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -33,8 +33,9 @@ SYSTEM_PROMPT = (
     "modifications or changes. Do not analyze, format, or alter the content in any way. Simply return the given "
     "input exactly as it is."
 )
-OPENAI_API_KEY = "key"
-openai.api_key = OPENAI_API_KEY
+
+openai.api_key = settings.API_KEY
+db_poll_threshold = settings.POLL_THRESSHOLD
 # Background task to check for new rows
 # Use FastAPI's new lifespan event
 @asynccontextmanager
@@ -224,11 +225,12 @@ async def check_for_new_data():
 
                 else:
                     logging.info("No new rows found.")
+                    logging.info(db_poll_threshold)
 
         except Exception as e:
             logging.error(f"Error checking database: {e}")
 
-        await asyncio.sleep(10)  # Check every 10 seconds
+        await asyncio.sleep(db_poll_threshold)  # Check every 5 seconds
 
 
 async def fetch_data_by_id(session, row_id):

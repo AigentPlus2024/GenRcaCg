@@ -11,13 +11,13 @@ const errorCollection = [
 ];
 function openChat() {
     chatContainer.style.display = "flex";
-    chatBubble.style.display = "none";
+//    chatBubble.style.display = "none";
 }
 
 function closeChat() {
     if (chatContainer.style.display === "none") {
         chatContainer.style.display = "flex";
-        chatBubble.style.display = "none";
+//        chatBubble.style.display = "none";
     } else {
         chatContainer.style.display = "none";
         chatBubble.style.display = "block";
@@ -81,7 +81,7 @@ socket.onmessage = (event) => {
         errorBox.innerHTML = alertMessage;
         chatBox.appendChild(errorBox);
 
-        // ✅ Add the if-else condition here
+        //  Add the if-else condition here
         setTimeout(() => {
             const analysisBox = document.getElementById(`analysis-box-${data.id}`);
             if (data.search_keyword === null || data.search_keyword.trim() === "") {
@@ -270,34 +270,26 @@ function maximizeChat() {
         headerText.style.left = '-210px';
         chatInputContainer.style.width = '428px';
         chatInput.style.width = '370px';
-        maxAndMinIcons.innerHTML = '🔳';
+        maxAndMinIcons.innerHTML = '<i class="fa fa-square-o" style="font-size:16px"></i>';
+
     }
 }
 
-/// Ensure refreshChat is defined globally
+// Ensure refreshChat is defined globally
 window.refreshChat = function () {
     console.log("Refreshing Chat UI...");
-
-    // Show confirmation alert
-    const userConfirmation = confirm("Are you sure you want to clear the chat?");
-
-    // If user clicks "Yes"
-    if (userConfirmation) {
-        // Get chatBox reference correctly
-        const chatBox = document.getElementById("chat-box");
-        if (!chatBox) {
-            console.error("chatBox element not found!");
-            return;
-        }
-
-        // Clear all child nodes from chatBox
-        while (chatBox.firstChild) {
-            chatBox.removeChild(chatBox.firstChild);
-        }
-        console.log("Chat UI cleared successfully!");
-    } else {
-        console.log("Chat clear operation canceled.");
+    const chatBox = document.getElementById("chat-box");
+    if (!chatBox) {
+        console.error("chatBox element not found!");
+        return;
     }
+
+    // Clear all child nodes from chatBox
+    while (chatBox.firstChild) {
+        chatBox.removeChild(chatBox.firstChild);
+    }
+
+    console.log("Chat UI cleared successfully!");
 };
 
 function stopTypingIndicator(container) {
@@ -352,78 +344,87 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-// Receive and display search results
 searchSocket.onmessage = function (event) {
     try {
         let searchResults = JSON.parse(event.data);
         console.log("Search Results:", searchResults);
 
         if (!searchResults.results || searchResults.results.length === 0) {
-            window.alert("No matching records found.");
-            return;
+            return; // No matching records found
         }
 
         if (searchResults.status === "success") {
             let promiseChain = Promise.resolve(); // Start with resolved promise
 
             searchResults.results.forEach(row => {
+                // Declare uniqueId before using it in promise chain
+                const uniqueId = `${row.id}-${Date.now()}`; // Unique id for each analysis box
+
                 promiseChain = promiseChain
                     .then(() => {
-                        const errorBox = document.createElement('span');
+                        const errorBox = document.createElement("span");
                         errorBox.className = "inner-errorBox";
 
-                        // Determine the button text based on the source value
+                        // Determine button text based on source value
                         let buttonText = "";
                         if (row.source.includes("Health")) {
                             buttonText = "<button id='health-btn'>Healthy</button>";
                         } else if (row.source.includes("Incident")) {
                             buttonText = "<button id='alert-btn'>Alert</button>";
                         }
+
+                        // Apply style based on search_keyword
                         let errorBoxStyle = null;
-                        if (row.search_keyword === null || row.search_keyword.trim() === ""){
-                            errorBoxStyle = `<div class='error-box'>${row.error_description}</div>`
-                        }else {
-                            errorBoxStyle = `<div class='error-box-keywords'>${row.error_description}</div>`
+                        if (row.search_keyword === null || row.search_keyword.trim() === "") {
+                            errorBoxStyle = `<div class='error-box'>${row.error_description}</div>`;
+                        } else {
+                            errorBoxStyle = `<div class='error-box-keywords'>${row.error_description}</div>`;
                         }
 
-                        // Display error alert
+                        // Display error alert with unique analysis box id
                         const alertMessage = `
                             <div class='chat-message' style="background-color: white;">
-                                <span class='timestamp'>${new Date().toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                                <span class='timestamp'>${new Date().toLocaleString('en-US', {
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: true
+                                })}</span>
                                 <span class='inner-logo'><img src="/static/images/sgx logo.png" alt="sgx log" height="10px" width="10px"></span>
                                 <span id="inner-logo-text">Genix Support</span><br><br>
                                 <b>${row.source}</b>
                                 ${buttonText}<br><br>
                                 ${errorBoxStyle}
-                                <div class='analysis-box' id="analysis-box-${row.id}"></div> <!-- ✅ Placeholder for analysis -->
+                                <div class='analysis-box' id="analysis-box-${uniqueId}"></div> <!-- Unique analysis box -->
                             </div>`;
 
                         errorBox.innerHTML = alertMessage;
                         chatBox.appendChild(errorBox);
 
-                        return new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s
+                        return new Promise(resolve => setTimeout(resolve, 1000)); // Delay for 1s
                     })
                     .then(() => {
-                        const analysisBox = document.getElementById(`analysis-box-${row.id}`);
+                        // Corrected: Get the unique analysis box after declaring uniqueId
+                        const analysisBox = document.getElementById(`analysis-box-${uniqueId}`);
 
                         if (row.search_keyword === null || row.search_keyword.trim() === "") {
-                            // ✅ Call startAnalysis as it is without any changes
+                            // Call startAnalysis for plain responses
                             startAnalysis(row.response);
                         } else {
-                            // ✅ Pass analysisBox to startAnalysisWithKeyword to update inside errorBox
+                            // Call startAnalysisWithKeyword for keyword-based responses
                             startAnalysisWithKeyword(row.response, analysisBox);
                         }
-                    }); // ✅ Properly closing the .then()
+                    });
             });
         } else {
             console.warn("No valid results found in response.");
-            window.alert("No valid results found in response.");
         }
     } catch (error) {
         console.error("Error processing search WebSocket message:", error);
     }
 };
-
 
 
 
