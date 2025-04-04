@@ -306,19 +306,26 @@ document.addEventListener("DOMContentLoaded", function () {
     function searchByKeyword() {
         const keywordInput = inputBox.value.trim();
 
+        // Assuming WebSocket is open, send the message (you need to ensure WebSocket is properly initialized)
+        console.log("Searching for:", keywordInput);
         if (keywordInput === "") {
             alert("Please enter a search term.");
             return;
         }
-
-        // Assuming WebSocket is open, send the message (you need to ensure WebSocket is properly initialized)
-        console.log("Searching for:", keywordInput);
-        // If WebSocket is ready, send it to the backend
-        if (searchSocket && searchSocket.readyState === WebSocket.OPEN) {
-            searchSocket.send(keywordInput); // Send the search term to backend
+        else if (keywordInput === "AHR htcare homehealth" || keywordInput === "Incident Report  htcare homehealth") {
+                // If WebSocket is ready, send it to the backend
+            if (searchSocket && searchSocket.readyState === WebSocket.OPEN) {
+                console.log("search web socket triggered..")
+                searchSocket.send(keywordInput); // Send the search term to backend
+            } else {
+                console.error("WebSocket not connected.");
+            }
         } else {
-            console.error("WebSocket not connected.");
+            //Calling the splunk query method
+            console.log("calling query splunk method")
+            querySplunk(keywordInput);
         }
+
 
         inputBox.value = ""; // Clear input after sending
     }
@@ -341,6 +348,82 @@ document.addEventListener("DOMContentLoaded", function () {
     // Ensure input box is focused to test event
     inputBox.focus();
 });
+
+async function querySplunk(prompt) {
+    startTypingIndicator(chatBox)
+    const response = await fetch("/splunk-query", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ query: prompt })
+    });
+
+    const data = await response.json();
+    stopTypingIndicator(chatBox)
+    if (response.ok) {
+        console.log("Splunk response:", data);
+         if (data.results && Array.isArray(data.results)) {
+            const validLogs = data.results.filter(log => log.result);
+            console.log("validLogs"+ validLogs)
+            openChat(); // Ensure this function is working
+            const errorBox = document.createElement('span');
+            errorBox.className = "inner-errorBox";
+            let combinedLogHTML = "";  // This will collect all logs
+            if (validLogs.length !== 0){
+                data.results.forEach((log, index) => {
+                spl_query = data.spl;
+                const result = log.result || {};
+                // get log file name from the source value
+                const sourcePath = result.source || "";
+                const fileName = sourcePath.split("/").pop();
+                // let sourceStyle = `<span style="font-weight: 649; color: #1B1C1F;">${result.sourcetype || 'unknown'}</span>`;
+                let sourceStyle = `Source: ${fileName}`
+                let errorBoxStyle = `<div class='error-box-keywords' style='background: #F2F2F2;'>${spl_query}</div>`;
+                    combinedLogHTML += `
+                    <div class="container-queries">
+                        <div class="log-header">
+                            ${sourceStyle}
+                        </div>
+                        <div class="log-content">
+                            ${result._raw}
+                        </div>
+                    </div></br></br>
+                `;
+
+
+
+
+                // Display error alert
+                const alertMessage = `
+                    <div class='chat-message' style="background-color: white;">
+                        <span class='timestamp'>${new Date().toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                        <span class='inner-logo'><img src="/static/images/sgx logo.png" alt="sgx log" height="10px" width="10px"></span>
+                        <span id="inner-logo-text">Genix Support</span><br><br>
+                       <b> ${prompt}</b>
+                        ${errorBoxStyle} </br></br>
+                        ${combinedLogHTML}
+                    </div>`;
+
+                    errorBox.innerHTML = alertMessage;
+                    chatBox.appendChild(errorBox);
+                })
+
+                chatBox.scrollTop = chatBox.scrollHeight;  // Auto-scroll
+
+            } else {
+                chatBox.innerHTML += `<div class="chat-message" style='background: #F2F2F2;'>I'm sorry, but I wasn\'t able to fully understand your request. Could you please rephrase or provide more context so I can assist you better?</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;  // Auto-scroll
+            }
+
+        } else {
+            chatBox.innerHTML += `<div class="chat-message" style='background: #F2F2F2;'>I'm sorry, but I wasn\'t able to fully understand your request. Could you please rephrase or provide more context so I can assist you better?</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;  // Auto-scroll
+        }
+    } else {
+        console.log("Error fetching logs: " + data.error);
+    }
+}
 
 
 

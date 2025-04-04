@@ -1,8 +1,8 @@
 from datetime import datetime
 import json
 from contextlib import asynccontextmanager
-
-
+import boto3
+import httpx
 import openai
 from fastapi import FastAPI, WebSocket, HTTPException, Depends
 from fastapi.templating import Jinja2Templates
@@ -14,6 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from starlette.requests import Request
 import asyncio
+
+from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 import logging
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,6 +38,7 @@ SYSTEM_PROMPT = (
 
 openai.api_key = settings.API_KEY
 db_poll_threshold = settings.POLL_THRESSHOLD
+bedrock = boto3.client("bedrock-runtime", region_name=settings.REG_NAME)
 # Background task to check for new rows
 # Use FastAPI's new lifespan event
 @asynccontextmanager
@@ -69,6 +72,14 @@ class ErrorCreate(BaseModel):
     error_description: str
     response: str
     search_keyword: str
+
+# Request schema
+class PromptRequest(BaseModel):
+    prompt: str
+
+#Base model for the splunk prompt query from Ui
+class QueryRequest(BaseModel):
+    query: str
 
 # Dependency to get DB session
 async def get_db():
@@ -299,7 +310,8 @@ async def generate_html_response(logs: str) -> str:
 async def insert_error(error_data: ErrorCreate, db: AsyncSession = Depends(get_db)):
     """Insert an error log into the error_response table."""
     try:
-        llm_response = await generate_html_response(error_data.response)
+        # llm_response = await generate_html_response(error_data.response)
+        llm_response = await generate_html_response_cloude(error_data.response)
         query = text("""
             INSERT INTO error_response (source, error_description, response, search_keyword)
             VALUES (:source, :error_description, :response, :search_keyword)
@@ -318,3 +330,82 @@ async def insert_error(error_data: ErrorCreate, db: AsyncSession = Depends(get_d
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
+
+async def generate_html_response_cloude(user_input: str) -> str:
+
+
+    # Compose a Claude-compatible prompt with the "system" and "user" concepts
+    claude_prompt = f"""
+Human: {SYSTEM_PROMPT}
+
+Here are the html content:
+{user_input}
+
+Assistant:
+"""
+
+    payload = {
+        "prompt": claude_prompt.strip(),
+        "max_tokens_to_sample": 500,
+        "temperature": 0.2
+    }
+
+    try:
+        response = bedrock.invoke_model(
+            body=json.dumps(payload),
+            modelId="anthropic.claude-v2",
+            contentType="application/json",
+            accept="application/json"
+        )
+        result = json.loads(response['body'].read())
+        return result.get("completion", "").strip()
+
+    except Exception as e:
+        return f"<p>Error: {str(e)}</p>"
+
+@app.post("/claude-invoke")
+async def invoke_claude(req: PromptRequest):
+    model_id = "anthropic.claude-v2"
+    prompt = f"\n\nHuman: {req.prompt}\n\nAssistant:"
+
+    payload = {
+        "prompt": prompt,
+        "max_tokens_to_sample": 300,
+        "temperature": 0.7
+    }
+
+    try:
+        response = bedrock.invoke_model(
+            body=json.dumps(payload),
+            modelId=model_id,
+            contentType="application/json",
+            accept="application/json"
+        )
+        result = json.loads(response['body'].read())
+        return {"response": result.get("completion", "").strip()}
+
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/splunk-query")
+async def splunk_query(data: QueryRequest):
+    aws_endpoint = settings.AWS_SPLUNK_ENDPOINT
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                aws_endpoint,
+                json={"query": data.query},
+                auth=(settings.BASIC_AUTH_USERNAME, settings.BASIC_AUTH_PASSWORD)
+            )
+            response.raise_for_status()
+            return JSONResponse(content=response.json(), status_code=200)
+        except httpx.HTTPStatusError as e:
+            return JSONResponse(
+                content={"error": f"Splunk API failed: {e.response.text}"},
+                status_code=e.response.status_code
+            )
+        except Exception as e:
+            return JSONResponse(
+                content={"error": str(e)},
+                status_code=500
+            )

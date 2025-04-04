@@ -52,7 +52,7 @@ body {
 
 #chat-container {
     position: fixed;
-    bottom: 80px;
+    bottom: 68px;
     right: 20px;
     width: 450px;
     height: 550px;
@@ -99,7 +99,7 @@ transition: transform 0.3s ease-in-out, color 0.3s;
 #chat-header {
     background: #112f51;
     color: white;
-    padding: 15px;
+    padding: 10px;
     font-size: 16px;
     text-align: center;
     display: flex;
@@ -164,6 +164,11 @@ transition: transform 0.3s ease-in-out, color 0.3s;
     margin-top: 10px;
     position: relative;
     color: #1B1C1F;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 .error-box-keywords {
     background: #F5F5F5;
@@ -173,6 +178,11 @@ transition: transform 0.3s ease-in-out, color 0.3s;
     position: relative;
     color: #0556CF;
     font-weight: 500;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 #header-text{
@@ -225,7 +235,7 @@ transition: transform 0.3s ease-in-out, color 0.3s;
     position: absolute;
     padding: 10px;
     border: 1px solid #ccc;
-    border-radius: 20px;
+    border-radius: 5px;
     outline: none;
     width: 370px;
     font-size: 14px;
@@ -397,13 +407,19 @@ border: 2px solid #A1A1A1;
     background-color: #E2E1EC;
     padding: 8px;
     font-weight: bold;
-    border: 0.7px solid #A1A1A1;
+    border-top: 1.7px solid #A1A1A1;
+    border-left: 1.7px solid #A1A1A1;
+    border-right: 1.7px solid #A1A1A1;
     /* border-radius: 5px 5px 0 0; */
   }
   .log-content {
     padding: 15px;
     background-color: #FFFFFF;
-    border: 0.7px solid #A1A1A1;
+    border: 1.7px solid #A1A1A1;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
 
