@@ -52,10 +52,11 @@ body {
 
 #chat-container {
     position: fixed;
-    bottom: 68px;
+    bottom: 80px;
     right: 20px;
     width: 450px;
     height: 550px;
+    /*background: #F5F5F5;*/
     /*background: #F5F5F5;*/
     background: #F5F5F5;
 

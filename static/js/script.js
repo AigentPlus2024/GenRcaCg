@@ -364,7 +364,12 @@ async function querySplunk(prompt) {
     if (response.ok) {
         console.log("Splunk response:", data);
          if (data.results && Array.isArray(data.results)) {
-            const validLogs = data.results.filter(log => log.result);
+            // Step 1: Filter only logs that have all necessary fields
+            const validLogs = (data.results || []).filter(log => {
+                return log.result &&
+                       log.result._raw &&
+                       log.result.source;
+            });
             console.log("validLogs"+ validLogs)
             openChat(); // Ensure this function is working
             const errorBox = document.createElement('span');
@@ -388,7 +393,7 @@ async function querySplunk(prompt) {
                         <div class="log-content">
                             ${result._raw}
                         </div>
-                    </div></br></br>
+                    </div></br>
                 `;
 
 
@@ -412,16 +417,30 @@ async function querySplunk(prompt) {
                 chatBox.scrollTop = chatBox.scrollHeight;  // Auto-scroll
 
             } else {
-                chatBox.innerHTML += `<div class="chat-message" style='background: #F2F2F2;'>I'm sorry, but I wasn\'t able to fully understand your request. Could you please rephrase or provide more context so I can assist you better?</div>`;
+                const nullErrorBox = document.createElement('span');
+                nullErrorBox.className = "inner-errorBox";
+                nullErrorBox.innerHTML = `<div class="chat-message" style='background: #FFFFFF;'><b>${prompt}</b> </br>
+                <div class="error-box-keywords" style='color: #1B1C1F; background: #F2F2F2;'>I'm sorry, but I wasn\'t able to fully understand your request. Could you please rephrase or provide more context so I can assist you better?</div></div>`;
+                chatBox.appendChild(nullErrorBox)
                 chatBox.scrollTop = chatBox.scrollHeight;  // Auto-scroll
             }
 
         } else {
-            chatBox.innerHTML += `<div class="chat-message" style='background: #F2F2F2;'>I'm sorry, but I wasn\'t able to fully understand your request. Could you please rephrase or provide more context so I can assist you better?</div>`;
+            const emptyResErrorBox = document.createElement('span');
+            emptyResErrorBox.className = "inner-errorBox";
+            emptyResErrorBox.innerHTML = `<div class="chat-message" style='background: #FFFFFF;'><b>${prompt}</b> </br>
+                <div class="error-box-keywords" style='color: #1B1C1F; background: #F2F2F2;'>I'm sorry, but I wasn\'t able to fully understand your request. Could you please rephrase or provide more context so I can assist you better?</div></div>`;
+            chatBox.appendChild(emptyResErrorBox)
             chatBox.scrollTop = chatBox.scrollHeight;  // Auto-scroll
         }
     } else {
         console.log("Error fetching logs: " + data.error);
+        const serverErrorBox = document.createElement('span');
+        serverErrorBox.className = "inner-errorBox";
+        serverErrorBox.innerHTML = `<div class="chat-message" style='background: #FFFFFF;'><b>${prompt}</b> </br>
+        <div class="error-box-keywords" style='color: #1B1C1F; background: #FFF1F1;'>We ran into an issue while processing your request.<br>Please try again shortly. If the problem continues, feel free to contact support.</div></div>`;
+        chatBox.appendChild(serverErrorBox)
+        chatBox.scrollTop = chatBox.scrollHeight;  // Auto-scroll
     }
 }
 
